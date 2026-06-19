@@ -26,7 +26,6 @@ function AnimatedPage({ children }: { children: React.ReactNode }) {
 function App() {
   const location = useLocation()
   const theme = useAppStore((s) => s.theme)
-  const setTheme = useAppStore((s) => s.setTheme)
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
