@@ -4,7 +4,6 @@ import { Search, ArrowUpDown, Zap } from 'lucide-react'
 import { useAppStore } from '../store/appStore'
 import { EmailList } from '../components/EmailList'
 import { EmailViewer } from '../components/EmailViewer'
-import { Input } from '../components/ui/Input'
 import { Button } from '../components/ui/Button'
 
 export function InboxPage() {

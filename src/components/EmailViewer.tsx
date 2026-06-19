@@ -169,7 +169,7 @@ function ViewerContent({
   onExport,
 }: {
   message: ReturnType<typeof getSelectedMessage>
-  store: ReturnType<typeof useAppStore>
+  store: ReturnType<typeof useAppStore.getState>
   iframeRef: React.RefObject<HTMLIFrameElement | null>
   onDownloadAttachment: (att: NonNullable<NonNullable<ReturnType<typeof getSelectedMessage>>['attachments']>[number]) => void
   onDownloadAll: () => void
@@ -280,15 +280,19 @@ function ViewerContent({
           </div>
           <div className="flex flex-wrap gap-2">
             {message.attachments.map((att) => (
-              <Badge
+              <button
                 key={att.id}
-                variant={att.suspicious ? 'danger' : 'muted'}
-                className="cursor-pointer hover:bg-surface-hover transition-colors"
                 onClick={() => onDownloadAttachment(att)}
+                className="focus:outline-none"
               >
-                <Download className="h-3 w-3" />
-                {att.filename} {att.size ? `(${formatFileSize(att.size)})` : ''}
-              </Badge>
+                <Badge
+                  variant={att.suspicious ? 'danger' : 'muted'}
+                  className="cursor-pointer hover:bg-surface-hover transition-colors"
+                >
+                  <Download className="h-3 w-3" />
+                  {att.filename} {att.size ? `(${formatFileSize(att.size)})` : ''}
+                </Badge>
+              </button>
             ))}
           </div>
         </div>
