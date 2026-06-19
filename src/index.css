@@ -6,7 +6,29 @@
 
 @layer base {
   :root {
+    color-scheme: light;
+    --color-background: #ffffff;
+    --color-surface: #fafafa;
+    --color-surface-elevated: #f4f4f5;
+    --color-surface-hover: #e4e4e7;
+    --color-border: #e4e4e7;
+    --color-border-subtle: #d4d4d8;
+    --color-foreground: #09090b;
+    --color-muted: #71717a;
+    --color-muted-foreground: #a1a1aa;
+  }
+
+  .dark {
     color-scheme: dark;
+    --color-background: #09090b;
+    --color-surface: #111113;
+    --color-surface-elevated: #18181b;
+    --color-surface-hover: #27272a;
+    --color-border: #27272a;
+    --color-border-subtle: #3f3f46;
+    --color-foreground: #fafafa;
+    --color-muted: #a1a1aa;
+    --color-muted-foreground: #71717a;
   }
 
   * {
@@ -18,11 +40,18 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans min-h-screen;
+    @apply bg-background text-foreground font-sans min-h-screen transition-colors duration-300;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(139, 92, 246, 0.08), transparent),
+      radial-gradient(ellipse 60% 40% at 50% 100%, rgba(124, 58, 237, 0.04), transparent);
+    background-attachment: fixed;
+  }
+
+  .dark body,
+  body {
     background-image:
       radial-gradient(ellipse 80% 50% at 50% -20%, rgba(139, 92, 246, 0.15), transparent),
       radial-gradient(ellipse 60% 40% at 50% 100%, rgba(124, 58, 237, 0.08), transparent);
-    background-attachment: fixed;
   }
 
   ::selection {
@@ -78,6 +107,14 @@
   .text-gradient {
     @apply bg-gradient-to-r from-primary via-violet-400 to-indigo-400 bg-clip-text text-transparent;
   }
+
+  .skeleton {
+    @apply rounded-xl bg-surface-hover animate-pulse;
+  }
+
+  .shimmer {
+    @apply bg-gradient-to-r from-surface-elevated via-surface-hover to-surface-elevated bg-[length:200%_100%] animate-shimmer;
+  }
 }
 
 @layer utilities {
@@ -85,4 +122,3 @@
     animation: fadeIn 0.3s ease-out, slideUp 0.3s ease-out;
   }
 }
-

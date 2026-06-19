@@ -1,0 +1,18 @@
+{
+  "name": "Mull Me — Temporary Email",
+  "short_name": "Mull Me",
+  "description": "Free temporary email with multiple providers, full CSS support, link detection and security warnings.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#8b5cf6",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["utilities", "communication"]
+}

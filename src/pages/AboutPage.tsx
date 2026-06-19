@@ -1,8 +1,40 @@
+import { motion } from 'framer-motion'
 import { Shield, Mail, Code, Heart } from 'lucide-react'
+
+const items = [
+  {
+    icon: Mail,
+    title: 'How it works',
+    description: 'Choose a provider, generate a random address, and start receiving emails. Messages are fetched directly from the provider\'s API in your browser.',
+    color: 'text-primary',
+  },
+  {
+    icon: Shield,
+    title: 'Security',
+    description: 'HTML emails are sanitized with DOMPurify and rendered inside a sandboxed iframe. Links and attachments are analyzed for suspicious patterns.',
+    color: 'text-success',
+  },
+  {
+    icon: Code,
+    title: 'Open source',
+    description: 'The code is meant to be transparent and hackable. You can add new providers, change the UI, or deploy it anywhere.',
+    color: 'text-warning',
+  },
+  {
+    icon: Heart,
+    title: 'No tracking',
+    description: 'We do not use cookies for tracking, do not show ads, and do not store your emails on our infrastructure.',
+    color: 'text-danger',
+  },
+]
 
 export function AboutPage() {
   return (
-    <div className="mx-auto max-w-3xl space-y-8">
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="mx-auto max-w-3xl space-y-8"
+    >
       <div className="text-center">
         <h1 className="text-3xl font-bold text-foreground">About Mull Me</h1>
         <p className="mt-3 text-muted-foreground">
@@ -11,34 +43,20 @@ export function AboutPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="card space-y-3">
-          <Mail className="h-8 w-8 text-primary" />
-          <h2 className="text-lg font-semibold text-foreground">How it works</h2>
-          <p className="text-sm text-muted-foreground">
-            Choose a provider, generate a random address, and start receiving emails. Messages are fetched directly from the provider's API in your browser.
-          </p>
-        </div>
-        <div className="card space-y-3">
-          <Shield className="h-8 w-8 text-success" />
-          <h2 className="text-lg font-semibold text-foreground">Security</h2>
-          <p className="text-sm text-muted-foreground">
-            HTML emails are sanitized with DOMPurify and rendered inside a sandboxed iframe. Links and attachments are analyzed for suspicious patterns.
-          </p>
-        </div>
-        <div className="card space-y-3">
-          <Code className="h-8 w-8 text-warning" />
-          <h2 className="text-lg font-semibold text-foreground">Open source</h2>
-          <p className="text-sm text-muted-foreground">
-            The code is meant to be transparent and hackable. You can add new providers, change the UI, or deploy it anywhere.
-          </p>
-        </div>
-        <div className="card space-y-3">
-          <Heart className="h-8 w-8 text-danger" />
-          <h2 className="text-lg font-semibold text-foreground">No tracking</h2>
-          <p className="text-sm text-muted-foreground">
-            We do not use cookies for tracking, do not show ads, and do not store your emails on our infrastructure.
-          </p>
-        </div>
+        {items.map((item, i) => (
+          <motion.div
+            key={item.title}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.1 }}
+            whileHover={{ y: -2 }}
+            className="card space-y-3 transition-colors hover:border-primary/30"
+          >
+            <item.icon className={`h-8 w-8 ${item.color}`} />
+            <h2 className="text-lg font-semibold text-foreground">{item.title}</h2>
+            <p className="text-sm text-muted-foreground">{item.description}</p>
+          </motion.div>
+        ))}
       </div>
 
       <div className="rounded-2xl border border-border bg-surface-elevated p-6">
@@ -53,6 +71,6 @@ export function AboutPage() {
           Provider availability depends on their public APIs and CORS settings. If one provider is blocked, try another.
         </p>
       </div>
-    </div>
+    </motion.div>
   )
 }

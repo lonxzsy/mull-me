@@ -1,5 +1,9 @@
 import { useEffect, useRef } from 'react'
-import { AlertTriangle, Paperclip, FileText, Code, Eye, ImageOff, X, ExternalLink } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import {
+  AlertTriangle, Paperclip, FileText, Code, Eye, ImageOff, X, ExternalLink,
+  Download, Archive, FileDown
+} from 'lucide-react'
 import { useAppStore, getSelectedMessage } from '../store/appStore'
 import { buildEmailDocument, emailToText } from '../lib/email-renderer'
 import { buildSecurityReport, detectLinks } from '../lib/security'
@@ -21,15 +25,156 @@ export function EmailViewer() {
     iframe.srcdoc = doc
   }, [message, store.viewMode, store.blockRemoteImages])
 
+  const downloadAttachment = async (attachment: NonNullable<NonNullable<typeof message>['attachments']>[number]) => {
+    const { saveAs } = await import('file-saver')
+    if (attachment.data instanceof Blob) {
+      saveAs(attachment.data, attachment.filename)
+    } else if (attachment.url) {
+      try {
+        const resp = await fetch(attachment.url)
+        const blob = await resp.blob()
+        saveAs(blob, attachment.filename)
+      } catch {
+        store.addToast({ type: 'error', message: 'Failed to download attachment' })
+      }
+    } else {
+      store.addToast({ type: 'error', message: 'Attachment data not available' })
+    }
+  }
+
+  const downloadAllAttachments = async () => {
+    if (!message?.attachments?.length) return
+    const { saveAs } = await import('file-saver')
+    const { default: JSZip } = await import('jszip')
+
+    const zip = new JSZip()
+    let downloaded = 0
+
+    for (const att of message.attachments) {
+      try {
+        if (att.data instanceof Blob) {
+          zip.file(att.filename, att.data)
+          downloaded++
+        } else if (att.url) {
+          const resp = await fetch(att.url)
+          const blob = await resp.blob()
+          zip.file(att.filename, blob)
+          downloaded++
+        }
+      } catch { /* skip failed */ }
+    }
+
+    if (downloaded === 0) {
+      store.addToast({ type: 'error', message: 'No attachments could be downloaded' })
+      return
+    }
+
+    const zipBlob = await zip.generateAsync({ type: 'blob' })
+    saveAs(zipBlob, `attachments-${message.id.slice(0, 8)}.zip`)
+    store.addToast({ type: 'success', message: `Downloaded ${downloaded} attachment(s)` })
+  }
+
+  const exportEmail = async (format: 'eml' | 'json') => {
+    if (!message) return
+    const { saveAs } = await import('file-saver')
+
+    if (format === 'eml') {
+      const eml = [
+        `From: ${message.from}`,
+        `To: ${message.to}`,
+        `Subject: ${message.subject}`,
+        `Date: ${new Date(message.timestamp).toUTCString()}`,
+        'MIME-Version: 1.0',
+        'Content-Type: text/html; charset=UTF-8',
+        '',
+        message.body?.html || message.body?.text || '(No content)',
+      ].join('\n')
+      saveAs(new Blob([eml], { type: 'message/rfc822' }), `email-${message.id.slice(0, 8)}.eml`)
+    } else {
+      const json = JSON.stringify(message, null, 2)
+      saveAs(new Blob([json], { type: 'application/json' }), `email-${message.id.slice(0, 8)}.json`)
+    }
+    store.addToast({ type: 'success', message: `Email exported as ${format.toUpperCase()}` })
+  }
+
   if (!store.address) {
     return (
-      <div className="card flex flex-col items-center justify-center gap-3 py-16 text-center text-muted-foreground">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="card hidden flex-col items-center justify-center gap-3 py-16 text-center text-muted-foreground lg:flex"
+      >
         <FileText className="h-10 w-10" />
         <p className="text-sm">Select a mailbox to view emails.</p>
-      </div>
+      </motion.div>
     )
   }
 
+  return (
+    <>
+      {/* Desktop viewer */}
+      <div className="hidden lg:block">
+        <ViewerContent
+          message={message}
+          store={store}
+          iframeRef={iframeRef}
+          onDownloadAttachment={downloadAttachment}
+          onDownloadAll={downloadAllAttachments}
+          onExport={exportEmail}
+        />
+      </div>
+
+      {/* Mobile drawer */}
+      <AnimatePresence>
+        {message && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm lg:hidden"
+              onClick={() => store.selectMessage(null)}
+            />
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="fixed inset-y-0 right-0 z-50 w-full max-w-md border-l border-border bg-background shadow-2xl lg:hidden"
+            >
+              <div className="flex h-full flex-col overflow-y-auto p-4 pt-16">
+                <ViewerContent
+                  message={message}
+                  store={store}
+                  iframeRef={iframeRef}
+                  onDownloadAttachment={downloadAttachment}
+                  onDownloadAll={downloadAllAttachments}
+                  onExport={exportEmail}
+                />
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </>
+  )
+}
+
+function ViewerContent({
+  message,
+  store,
+  iframeRef,
+  onDownloadAttachment,
+  onDownloadAll,
+  onExport,
+}: {
+  message: ReturnType<typeof getSelectedMessage>
+  store: ReturnType<typeof useAppStore>
+  iframeRef: React.RefObject<HTMLIFrameElement | null>
+  onDownloadAttachment: (att: NonNullable<NonNullable<ReturnType<typeof getSelectedMessage>>['attachments']>[number]) => void
+  onDownloadAll: () => void
+  onExport: (format: 'eml' | 'json') => void
+}) {
   if (!message) {
     return (
       <div className="card flex flex-col items-center justify-center gap-3 py-16 text-center text-muted-foreground">
@@ -68,6 +213,14 @@ export function EmailViewer() {
             onClick={store.toggleBlockRemoteImages}
           >
             {store.blockRemoteImages ? 'Images blocked' : 'Images allowed'}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            leftIcon={<FileDown className="h-3.5 w-3.5" />}
+            onClick={() => onExport('eml')}
+          >
+            Export
           </Button>
         </div>
 
@@ -116,14 +269,24 @@ export function EmailViewer() {
 
       {message.attachments && message.attachments.length > 0 && (
         <div className="mt-4 space-y-2">
-          <h3 className="flex items-center gap-2 text-sm font-medium text-foreground">
-            <Paperclip className="h-4 w-4" />
-            Attachments ({message.attachments.length})
-          </h3>
+          <div className="flex items-center justify-between">
+            <h3 className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <Paperclip className="h-4 w-4" />
+              Attachments ({message.attachments.length})
+            </h3>
+            <Button variant="ghost" size="sm" leftIcon={<Archive className="h-3.5 w-3.5" />} onClick={onDownloadAll}>
+              Download all
+            </Button>
+          </div>
           <div className="flex flex-wrap gap-2">
             {message.attachments.map((att) => (
-              <Badge key={att.id} variant="muted" className="cursor-pointer hover:bg-surface-hover">
-                <Paperclip className="h-3 w-3" />
+              <Badge
+                key={att.id}
+                variant={att.suspicious ? 'danger' : 'muted'}
+                className="cursor-pointer hover:bg-surface-hover transition-colors"
+                onClick={() => onDownloadAttachment(att)}
+              >
+                <Download className="h-3 w-3" />
                 {att.filename} {att.size ? `(${formatFileSize(att.size)})` : ''}
               </Badge>
             ))}

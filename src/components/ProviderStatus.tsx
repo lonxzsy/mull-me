@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { motion } from 'framer-motion'
 import { Activity, CheckCircle2, XCircle, Clock, ExternalLink } from 'lucide-react'
 import { useAppStore } from '../store/appStore'
 import { providers } from '../providers'
@@ -27,11 +28,14 @@ export function ProviderStatus() {
       </div>
 
       <div className="space-y-2">
-        {providers.map((provider) => {
+        {providers.map((provider, i) => {
           const status = providerStatuses.find((s) => s.id === provider.id)
           return (
-            <div
+            <motion.div
               key={provider.id}
+              initial={{ opacity: 0, x: -12 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.05 }}
               className="flex items-center justify-between rounded-xl border border-border bg-surface p-4"
             >
               <div className="min-w-0 flex-1 space-y-1">
@@ -66,7 +70,7 @@ export function ProviderStatus() {
                 API docs
                 <ExternalLink className="h-3 w-3" />
               </a>
-            </div>
+            </motion.div>
           )
         })}
       </div>

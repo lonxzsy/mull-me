@@ -8,15 +8,15 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: '#09090b',
-        surface: '#111113',
-        'surface-elevated': '#18181b',
-        'surface-hover': '#27272a',
-        border: '#27272a',
-        'border-subtle': '#3f3f46',
-        foreground: '#fafafa',
-        muted: '#a1a1aa',
-        'muted-foreground': '#71717a',
+        background: 'var(--color-background)',
+        surface: 'var(--color-surface)',
+        'surface-elevated': 'var(--color-surface-elevated)',
+        'surface-hover': 'var(--color-surface-hover)',
+        border: 'var(--color-border)',
+        'border-subtle': 'var(--color-border-subtle)',
+        foreground: 'var(--color-foreground)',
+        muted: 'var(--color-muted)',
+        'muted-foreground': 'var(--color-muted-foreground)',
         primary: '#8b5cf6',
         'primary-foreground': '#ffffff',
         'primary-hover': '#7c3aed',
@@ -34,15 +34,20 @@ export default {
         'fade-in': 'fadeIn 0.3s ease-out',
         'slide-up': 'slideUp 0.4s ease-out',
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'shimmer': 'shimmer 2s infinite linear',
       },
       keyframes: {
         fadeIn: {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },
-          },
+        },
         slideUp: {
           '0%': { opacity: '0', transform: 'translateY(12px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        shimmer: {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
         },
       },
       backgroundImage: {
@@ -52,4 +57,3 @@ export default {
   },
   plugins: [],
 }
-

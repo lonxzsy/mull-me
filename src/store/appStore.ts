@@ -7,6 +7,13 @@ function debug(...args: unknown[]) {
   if (import.meta.env.DEV) console.log('[STORE]', ...args)
 }
 
+export interface Toast {
+  id: string
+  type: 'success' | 'error' | 'info' | 'warning'
+  message: string
+  duration?: number
+}
+
 interface AppState {
   address: EmailAddress | null
   providerId: string
@@ -21,6 +28,10 @@ interface AppState {
   providerStatuses: ProviderStatus[]
   lastChecked: number
   generatedHistory: EmailAddress[]
+  theme: 'light' | 'dark'
+  toasts: Toast[]
+  searchQuery: string
+  sortOrder: 'newest' | 'oldest' | 'sender' | 'subject'
 
   setProvider: (id: string) => void
   generateMailbox: (options?: { login?: string; domain?: string; lifetimeMinutes?: number }) => Promise<void>
@@ -37,6 +48,12 @@ interface AppState {
   clearHistory: () => void
   restoreMailbox: (address: EmailAddress) => void
   clearError: () => void
+  setTheme: (theme: 'light' | 'dark') => void
+  toggleTheme: () => void
+  addToast: (toast: Omit<Toast, 'id'>) => void
+  removeToast: (id: string) => void
+  setSearchQuery: (query: string) => void
+  setSortOrder: (order: 'newest' | 'oldest' | 'sender' | 'subject') => void
 }
 
 export const useAppStore = create<AppState>()(
@@ -55,6 +72,10 @@ export const useAppStore = create<AppState>()(
       providerStatuses: [],
       lastChecked: 0,
       generatedHistory: [],
+      theme: 'dark',
+      toasts: [],
+      searchQuery: '',
+      sortOrder: 'newest',
 
       setProvider: (id) => {
         const provider = getProviderById(id)
@@ -76,15 +97,18 @@ export const useAppStore = create<AppState>()(
           debug('generateMailbox: success, address =', address.address)
           set({ address, messages: [], selectedMessageId: null, loading: false })
           get().addToHistory(address)
+          get().addToast({ type: 'success', message: `Mailbox created: ${address.address}` })
           await get().refreshMessages()
         } catch (err) {
           debug('generateMailbox: FAILED -', err instanceof Error ? err.message : err)
-          set({ error: err instanceof Error ? err.message : 'Failed to generate mailbox', loading: false })
+          const msg = err instanceof Error ? err.message : 'Failed to generate mailbox'
+          set({ error: msg, loading: false })
+          get().addToast({ type: 'error', message: msg })
         }
       },
 
       refreshMessages: async () => {
-        const { address } = get()
+        const { address, messages: oldMessages } = get()
         if (!address) return
         const provider = getProviderById(address.providerId)
         if (!provider) return
@@ -104,6 +128,21 @@ export const useAppStore = create<AppState>()(
             if (!merged.find((m) => m.id === existingMsg.id)) merged.push(existingMsg)
           }
           merged.sort((a, b) => b.timestamp - a.timestamp)
+
+          const prevIds = new Set(oldMessages.map((m) => m.id))
+          const newMessages = messages.filter((m) => !prevIds.has(m.id))
+          if (newMessages.length > 0) {
+            get().addToast({ type: 'info', message: `${newMessages.length} new email${newMessages.length > 1 ? 's' : ''} received` })
+            if ('Notification' in window && Notification.permission === 'granted') {
+              for (const msg of newMessages.slice(0, 3)) {
+                new Notification('Mull Me', {
+                  body: `${msg.from}: ${msg.subject}`,
+                  icon: '/favicon.svg',
+                })
+              }
+            }
+          }
+
           set({ messages: merged, lastChecked: Date.now() })
         } catch (err) {
           debug('refreshMessages: FAILED -', err instanceof Error ? err.message : err)
@@ -139,7 +178,10 @@ export const useAppStore = create<AppState>()(
         }
       },
 
-      deleteMailbox: () => set({ address: null, messages: [], selectedMessageId: null, error: null }),
+      deleteMailbox: () => {
+        set({ address: null, messages: [], selectedMessageId: null, error: null })
+        get().addToast({ type: 'info', message: 'Mailbox deleted' })
+      },
       togglePolling: () => set((s) => ({ polling: !s.polling })),
       toggleAutoRefresh: () => set((s) => ({ autoRefresh: !s.autoRefresh })),
       toggleBlockRemoteImages: () => set((s) => ({ blockRemoteImages: !s.blockRemoteImages })),
@@ -174,7 +216,32 @@ export const useAppStore = create<AppState>()(
 
       restoreMailbox: (address) => {
         set({ address, messages: [], selectedMessageId: null, error: null })
+        get().addToast({ type: 'info', message: `Restored: ${address.address}` })
       },
+
+      setTheme: (theme) => {
+        set({ theme })
+        document.documentElement.classList.toggle('dark', theme === 'dark')
+      },
+
+      toggleTheme: () => {
+        const next = get().theme === 'dark' ? 'light' : 'dark'
+        get().setTheme(next)
+      },
+
+      addToast: (toast) => {
+        const id = Math.random().toString(36).substring(2, 9)
+        set((s) => ({ toasts: [...s.toasts, { ...toast, id }] }))
+        const duration = toast.duration ?? 4000
+        setTimeout(() => get().removeToast(id), duration)
+      },
+
+      removeToast: (id) => {
+        set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) }))
+      },
+
+      setSearchQuery: (query) => set({ searchQuery: query }),
+      setSortOrder: (order) => set({ sortOrder: order }),
     }),
     {
       name: 'mull-me-storage',
@@ -185,6 +252,7 @@ export const useAppStore = create<AppState>()(
         blockRemoteImages: state.blockRemoteImages,
         viewMode: state.viewMode,
         generatedHistory: state.generatedHistory,
+        theme: state.theme,
       }),
     }
   )
