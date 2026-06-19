@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   AlertTriangle, Paperclip, FileText, Code, Eye, ImageOff, X, ExternalLink,
@@ -18,12 +18,10 @@ export function EmailViewer() {
   const message = getSelectedMessage(store)
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
-  useEffect(() => {
-    if (!message || !iframeRef.current || store.viewMode !== 'html') return
-    const doc = buildEmailDocument(message.body?.html || '', store.blockRemoteImages)
-    const iframe = iframeRef.current
-    iframe.srcdoc = doc
-  }, [message, store.viewMode, store.blockRemoteImages])
+  const emailHtmlDoc = useMemo(() => {
+    if (!message?.body?.html) return ''
+    return buildEmailDocument(message.body.html, store.blockRemoteImages)
+  }, [message?.body?.html, store.blockRemoteImages])
 
   const downloadAttachment = async (attachment: NonNullable<NonNullable<typeof message>['attachments']>[number]) => {
     const { saveAs } = await import('file-saver')
@@ -118,6 +116,7 @@ export function EmailViewer() {
           message={message}
           store={store}
           iframeRef={iframeRef}
+          emailHtmlDoc={emailHtmlDoc}
           onDownloadAttachment={downloadAttachment}
           onDownloadAll={downloadAllAttachments}
           onExport={exportEmail}
@@ -147,6 +146,7 @@ export function EmailViewer() {
                   message={message}
                   store={store}
                   iframeRef={iframeRef}
+                  emailHtmlDoc={emailHtmlDoc}
                   onDownloadAttachment={downloadAttachment}
                   onDownloadAll={downloadAllAttachments}
                   onExport={exportEmail}
@@ -164,6 +164,7 @@ function ViewerContent({
   message,
   store,
   iframeRef,
+  emailHtmlDoc,
   onDownloadAttachment,
   onDownloadAll,
   onExport,
@@ -171,6 +172,7 @@ function ViewerContent({
   message: ReturnType<typeof getSelectedMessage>
   store: ReturnType<typeof useAppStore.getState>
   iframeRef: React.RefObject<HTMLIFrameElement | null>
+  emailHtmlDoc: string
   onDownloadAttachment: (att: NonNullable<NonNullable<ReturnType<typeof getSelectedMessage>>['attachments']>[number]) => void
   onDownloadAll: () => void
   onExport: (format: 'eml' | 'json') => void
@@ -252,6 +254,7 @@ function ViewerContent({
             ref={iframeRef}
             title="Email content"
             sandbox="allow-same-origin"
+            srcDoc={emailHtmlDoc}
             className="h-full min-h-[320px] w-full rounded-xl"
           />
         )}
