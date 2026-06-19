@@ -6,7 +6,7 @@ const SANITIZE_CONFIG = {
   ADD_ATTR: ['target', 'rel', 'data-link', 'title', 'alt'],
   FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onmouseout', 'onfocus', 'onblur', 'onchange', 'onsubmit', 'onreset', 'onselect', 'onkeydown', 'onkeypress', 'onkeyup', 'oncontextmenu'],
   FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'applet', 'form', 'input', 'button', 'textarea', 'select', 'video', 'audio', 'source', 'track', 'canvas', 'svg'],
-  WHOLE_DOCUMENT: true,
+  WHOLE_DOCUMENT: false,
   RETURN_DOM: false,
   RETURN_TRUSTED_TYPE: false,
 }
