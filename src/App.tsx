@@ -10,15 +10,14 @@ import { ProvidersPage } from './pages/ProvidersPage'
 import { AboutPage } from './pages/AboutPage'
 import { useAppStore } from './store/appStore'
 
-const pageVariants = {
-  initial: { opacity: 0, y: 12 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeOut' } },
-  exit: { opacity: 0, y: -12, transition: { duration: 0.2, ease: 'easeIn' } },
-}
-
 function AnimatedPage({ children }: { children: React.ReactNode }) {
   return (
-    <motion.div variants={pageVariants} initial="initial" animate="animate" exit="exit">
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -12 }}
+      transition={{ duration: 0.25, ease: 'easeOut' }}
+    >
       {children}
     </motion.div>
   )
